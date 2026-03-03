@@ -1,15 +1,11 @@
-# Asteroids Arcade (CodePen)
-
-## HTML
 ```html
 <canvas id="gameCanvas" aria-label="Asteroids Arcade"></canvas>
 ```
 
-## CSS
 ```css
-html, body {
+html,
+body {
   margin: 0;
-  padding: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -25,7 +21,6 @@ html, body {
 }
 ```
 
-## JS
 ```javascript
 (() => {
   const canvas = document.getElementById("gameCanvas");
@@ -38,6 +33,7 @@ html, body {
   let height = 600;
   let stars = [];
 
+  // Spielobjekte und Spielzustand
   const ship = {
     x: width / 2,
     y: height / 2,
@@ -55,12 +51,14 @@ html, body {
   let gameOver = false;
   let asteroidTimer = 0;
 
+  // Größenstufen: 3 = groß, 2 = mittel, 1 = klein
   const sizeConfig = {
     3: { radius: 48, points: 20, speedMin: 22, speedMax: 42 },
     2: { radius: 28, points: 50, speedMin: 38, speedMax: 70 },
     1: { radius: 16, points: 100, speedMin: 62, speedMax: 110 }
   };
 
+  // Canvas auf Fullscreen (mindestens 800x600) setzen + Sternenhintergrund neu erzeugen
   function resizeCanvas() {
     width = Math.max(800, window.innerWidth);
     height = Math.max(600, window.innerHeight);
@@ -68,9 +66,7 @@ html, body {
     canvas.width = width;
     canvas.height = height;
 
-    ship.x = width / 2;
-    ship.y = height / 2;
-
+    // Mehr Sterne auf größeren Flächen
     const starCount = Math.floor((width * height) / 5500);
     stars = Array.from({ length: starCount }, () => ({
       x: Math.random() * width,
@@ -80,6 +76,7 @@ html, body {
     }));
   }
 
+  // Wrap-Around an den Bildschirmrändern
   function wrap(obj) {
     if (obj.x < 0) obj.x += width;
     if (obj.x >= width) obj.x -= width;
@@ -91,6 +88,7 @@ html, body {
     return Math.random() * (max - min) + min;
   }
 
+  // Asteroid mit zufälliger Geschwindigkeit/Rotation erstellen
   function createAsteroid(size, x, y) {
     const cfg = sizeConfig[size];
     const speed = randRange(cfg.speedMin, cfg.speedMax);
@@ -110,6 +108,7 @@ html, body {
     };
   }
 
+  // Asteroid zufällig am Rand spawnen
   function spawnEdgeAsteroid(size = 3) {
     const edge = Math.floor(Math.random() * 4);
     let x;
@@ -168,6 +167,7 @@ html, body {
     });
   }
 
+  // Treffer auf Asteroid: Punkte + Split in zwei kleinere Asteroiden
   function splitAsteroid(index) {
     const hit = asteroids[index];
     score += hit.points;
@@ -185,6 +185,7 @@ html, body {
     }
   }
 
+  // Schiff getroffen: Leben runter + kurze Unverwundbarkeit
   function hitShip() {
     if (ship.invulnerableTime > 0 || gameOver) return;
 
@@ -195,31 +196,31 @@ html, body {
     ship.vy = 0;
     ship.invulnerableTime = 2.2;
 
-    if (lives <= 0) {
-      gameOver = true;
-    }
+    if (lives <= 0) gameOver = true;
   }
 
   function update(dt) {
+    // Drehen
     if (keys.ArrowLeft) ship.angle -= 3.6 * dt;
     if (keys.ArrowRight) ship.angle += 3.6 * dt;
 
+    // Schub
     if (!gameOver && keys.ArrowUp) {
       const thrust = 190;
       ship.vx += Math.cos(ship.angle) * thrust * dt;
       ship.vy += Math.sin(ship.angle) * thrust * dt;
     }
 
+    // Reibung + Bewegung
     ship.vx *= 0.992;
     ship.vy *= 0.992;
     ship.x += ship.vx * dt;
     ship.y += ship.vy * dt;
     wrap(ship);
 
-    if (ship.invulnerableTime > 0) {
-      ship.invulnerableTime -= dt;
-    }
+    if (ship.invulnerableTime > 0) ship.invulnerableTime -= dt;
 
+    // Laser updaten
     for (let i = lasers.length - 1; i >= 0; i -= 1) {
       const l = lasers[i];
       l.x += l.vx * dt;
@@ -229,6 +230,7 @@ html, body {
       if (l.life <= 0) lasers.splice(i, 1);
     }
 
+    // Asteroiden updaten
     for (let i = asteroids.length - 1; i >= 0; i -= 1) {
       const a = asteroids[i];
       a.x += a.vx * dt;
@@ -237,9 +239,9 @@ html, body {
       wrap(a);
     }
 
+    // Laser-Asteroid-Kollision
     for (let li = lasers.length - 1; li >= 0; li -= 1) {
       const l = lasers[li];
-      let consumed = false;
 
       for (let ai = asteroids.length - 1; ai >= 0; ai -= 1) {
         const a = asteroids[ai];
@@ -248,14 +250,12 @@ html, body {
         if (dx * dx + dy * dy <= (a.radius + l.radius) ** 2) {
           splitAsteroid(ai);
           lasers.splice(li, 1);
-          consumed = true;
           break;
         }
       }
-
-      if (consumed) continue;
     }
 
+    // Schiff-Asteroid-Kollision
     if (!gameOver) {
       for (let i = 0; i < asteroids.length; i += 1) {
         const a = asteroids[i];
@@ -269,6 +269,7 @@ html, body {
       }
     }
 
+    // Nachschub an Asteroiden je nach Score
     asteroidTimer += dt;
     const targetCount = 4 + Math.floor(score / 400);
     if (!gameOver && asteroidTimer > 2.4 && asteroids.length < targetCount) {
@@ -289,12 +290,14 @@ html, body {
   }
 
   function drawShip() {
+    // Blinken während Unverwundbarkeit
     const blink = ship.invulnerableTime > 0 && Math.floor(ship.invulnerableTime * 12) % 2 === 0;
     if (blink && !gameOver) return;
 
     ctx.save();
     ctx.translate(ship.x, ship.y);
     ctx.rotate(ship.angle + Math.PI / 2);
+
     ctx.strokeStyle = "#9de7ff";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -305,6 +308,7 @@ html, body {
     ctx.closePath();
     ctx.stroke();
 
+    // Schubflamme
     if (keys.ArrowUp && !gameOver) {
       ctx.strokeStyle = "#ffad66";
       ctx.beginPath();
@@ -313,6 +317,7 @@ html, body {
       ctx.lineTo(5, ship.radius - 1);
       ctx.stroke();
     }
+
     ctx.restore();
   }
 
@@ -355,7 +360,7 @@ html, body {
 
     ctx.font = "500 15px system-ui, sans-serif";
     ctx.fillStyle = "#a9b6d6";
-    ctx.fillText("Controls: ←/→ turn, ↑ thrust, Space shoot, R restart", 18, height - 20);
+    ctx.fillText("Controls: ←/→ drehen, ↑ Schub, Space schießen, R Neustart", 18, height - 20);
 
     if (gameOver) {
       ctx.textAlign = "center";
@@ -372,7 +377,7 @@ html, body {
   function draw() {
     ctx.clearRect(0, 0, width, height);
     drawStars();
-    for (const a of asteroids) drawAsteroid(a);
+    for (const asteroid of asteroids) drawAsteroid(asteroid);
     drawLasers();
     drawShip();
     drawHud();
@@ -402,6 +407,7 @@ html, body {
     keys[e.code === "Space" ? "Space" : e.key] = false;
   });
 
+  // Bei Resize Spielobjekte proportional verschieben
   window.addEventListener("resize", () => {
     const oldW = width;
     const oldH = height;
@@ -409,15 +415,17 @@ html, body {
 
     const sx = width / oldW;
     const sy = height / oldH;
+
     ship.x *= sx;
     ship.y *= sy;
-    for (const a of asteroids) {
-      a.x *= sx;
-      a.y *= sy;
+
+    for (const asteroid of asteroids) {
+      asteroid.x *= sx;
+      asteroid.y *= sy;
     }
-    for (const l of lasers) {
-      l.x *= sx;
-      l.y *= sy;
+    for (const laser of lasers) {
+      laser.x *= sx;
+      laser.y *= sy;
     }
   });
 
