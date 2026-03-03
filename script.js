@@ -1,27 +1,3 @@
-```html
-<canvas id="gameCanvas" aria-label="Asteroids Arcade"></canvas>
-```
-
-```css
-html,
-body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #05070f;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
-
-#gameCanvas {
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(circle at 20% 20%, #0a1020 0%, #05070f 65%, #02030a 100%);
-}
-```
-
-```javascript
 (() => {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
@@ -433,4 +409,3 @@ body {
   resetGame();
   requestAnimationFrame(frame);
 })();
-```
